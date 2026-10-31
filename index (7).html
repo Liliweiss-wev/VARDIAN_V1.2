@@ -1,0 +1,425 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>무기·반지·갑옷·스킬 UR 목표 계산기</title>
+<script>
+(function(){var t;try{t=localStorage.getItem('urcalc-theme')}catch(e){}
+if(t!=='dark'&&t!=='light')t=(window.matchMedia&&matchMedia('(prefers-color-scheme:dark)').matches)?'dark':'light';
+document.documentElement.setAttribute('data-theme',t)})();
+</script>
+<style>
+:root{color-scheme:light;
+--bg:#f3f7fc;--card:#fff;--line:#d9e4f2;--ink:#203451;--mut:#5c7088;--brand:#2673d9;--navy:#1c3152;--tabon:#1c3152;
+--soft:#f1f7ff;--softline:#cfe1fb;--field:#fff;--fieldline:#b9cbe3;--th:#f2f7fd;--thtxt:#56708f;--row:#e5edf6;--cur:#e2efff;
+--sec:#f8fbff;--secline:#dbe7f5;--big:#1765c5;--statusbg:#edf5ff;--statusline:#d5e7ff;
+--warnbg:#fff8eb;--warnline:#ffe1ac;--warntxt:#78551c;--swoff:#b4c4da;--secbtnline:#c3d4ea;--secbtntxt:#385575;--foot:#7a8aa2;
+--C:#5f6f83;--UC:#007a6a;--R:#2064d6;--SR:#9a30c6;--SSR:#a56b00;--UR:#d62d5e;
+--grid:#e5edf6;--axis:#9fb2cb;--bar:#bcd3f5;--cumc:#b77900;--meanc:#1765c5;--medc:#008d7b;--p90c:#e33c6b;--ci:rgba(38,115,217,.28)}
+[data-theme="dark"]{color-scheme:dark;
+--bg:#0d1522;--card:#152033;--line:#2a3a56;--ink:#e6eefb;--mut:#9db0ca;--brand:#4d93f0;--navy:#0a111c;--tabon:#e6eefb;
+--soft:#12233c;--softline:#294670;--field:#0e1a2c;--fieldline:#3a4f70;--th:#1b2b44;--thtxt:#a9bbd4;--row:#243551;--cur:#1f3a63;
+--sec:#111d30;--secline:#28395a;--big:#7ab8ff;--statusbg:#14263f;--statusline:#27456f;
+--warnbg:#33290f;--warnline:#6b5420;--warntxt:#f0cf8a;--swoff:#4a5d7d;--secbtnline:#3a4f70;--secbtntxt:#c5d5ec;--foot:#7f92ae;
+--C:#a3b0c2;--UC:#33d4bb;--R:#6aa6ff;--SR:#cf84f3;--SSR:#f2b844;--UR:#ff7399;
+--grid:#26364f;--axis:#4a5d7d;--bar:#3a5f98;--cumc:#f2b844;--meanc:#7ab8ff;--medc:#33d4bb;--p90c:#ff7399;--ci:rgba(122,184,255,.3)}
+*{box-sizing:border-box}
+body{margin:0;font-size:17.28px;background:var(--bg);color:var(--ink);font-family:system-ui,"Malgun Gothic",sans-serif;line-height:1.5;transition:background .2s,color .2s}
+header{background:var(--navy);color:#fff;padding:24px max(16px,calc((100% - 1400px)/2 + 16px)) 0}
+.hrow{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+h1{margin:0 0 6px;font-size:clamp(23.76px,3.24vw,32.4px)}
+header p{margin:0 0 18px;color:#dce8f8;font-size:15.12px}
+.themebtn{flex:none;display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.35);color:#fff;padding:9px 14px;border-radius:999px;font-size:14.5px;font-weight:700;cursor:pointer;white-space:nowrap}
+.themebtn:hover{background:rgba(255,255,255,.22)}
+.tabs{display:flex;gap:6px;overflow-x:auto}
+.tab{white-space:nowrap;border:0;background:transparent;color:#b9cbe4;padding:12px 22px;font-size:17.28px;font-weight:700;border-radius:10px 10px 0 0;cursor:pointer}
+.tab.on{background:var(--bg);color:var(--tabon)}
+.tab:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #8fb8f5;outline-offset:1px}
+main{max-width:1400px;margin:20px auto;padding:0 16px}
+.grid,.lower{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start;margin-bottom:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin:0;min-width:0;counter-reset:sec}
+h2{font-size:21px;margin:0 0 16px;padding-left:12px;border-left:5px solid var(--brand);line-height:1.3}
+h3{font-size:15.12px;margin:16px 0 8px;color:var(--mut)}
+label{display:block;font-size:14.04px;font-weight:700;margin-bottom:4px}
+input,select{width:100%;padding:10px;border:1px solid var(--fieldline);border-radius:8px;font-size:17.28px;background:var(--field);color:var(--ink)}
+input[readonly]{opacity:.75}
+/* 섹션 */
+.sec{background:var(--sec);border:1px solid var(--secline);border-radius:12px;padding:16px;margin-bottom:14px}
+.sec:last-child{margin-bottom:0}
+.sec-h{display:flex;align-items:center;gap:10px;margin:0 0 12px;padding-bottom:10px;border-bottom:2px solid var(--secline)}
+.sec-h::before{counter-increment:sec;content:counter(sec);width:26px;height:26px;border-radius:50%;background:var(--brand);color:#fff;display:grid;place-items:center;font-size:14px;font-weight:800;flex:none}
+.sec-h h3{margin:0;font-size:18px;color:var(--ink)}
+.sec-h .sw{margin-left:auto}
+.sec-d{margin:-4px 0 12px}
+.sec .muted:last-child{margin-bottom:0}
+.inputs{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.C{color:var(--C)}.UC{color:var(--UC)}.R{color:var(--R)}.SR{color:var(--SR)}.SSR{color:var(--SSR)}.UR{color:var(--UR)}
+.buttons{display:flex;gap:10px;margin-top:16px}
+button{border:0;border-radius:9px;padding:13px 16px;font-size:16.2px;font-weight:700;cursor:pointer}
+.primary{background:var(--brand);color:#fff;flex:1}.primary:disabled{opacity:.6;cursor:wait}
+.secondary{background:var(--card);border:1px solid var(--secbtnline);color:var(--secbtntxt)}
+.chip{padding:6px 12px;font-size:13.5px;background:var(--card);border:1px solid var(--secbtnline);color:var(--secbtntxt);border-radius:999px}
+.chip:hover{border-color:var(--brand);color:var(--brand)}
+.muted{color:var(--mut);font-size:14.04px}
+.progress{height:6px;background:var(--row);border-radius:6px;overflow:hidden;margin-top:14px}
+.progress div{height:100%;width:0;background:var(--brand)}
+.result{padding:18px;background:var(--soft);border:1px solid var(--softline);border-radius:11px}
+.big{white-space:nowrap;min-height:1.2em;font-size:clamp(34.56px,4.32vw,47.52px);font-weight:800;color:var(--big);margin:4px 0}
+.stats{display:grid;grid-template-columns:1fr 1fr 1.7fr;gap:10px;margin-top:12px}
+.stats div{background:var(--card);border:1px solid var(--line);border-radius:9px;padding:9px 10px}
+.stats b{display:block;font-size:18.36px;white-space:nowrap}
+.status{background:var(--statusbg);border:1px solid var(--statusline);border-radius:9px;padding:11px 12px;margin:12px 0 0;font-size:14.04px;min-height:64px}
+.warn{background:var(--warnbg);border:1px solid var(--warnline);padding:12px;border-radius:9px;font-size:14.04px;color:var(--warntxt);margin-top:12px}
+table{width:100%;border-collapse:collapse;font-size:15.12px}
+td,th{padding:8px 6px;border-bottom:1px solid var(--row);text-align:right}
+td:first-child,th:first-child{text-align:left;font-weight:700}
+th{background:var(--th);color:var(--thtxt)}
+tr.cur td{background:var(--cur)}
+.gt input{padding:7px 6px;font-size:16.2px;text-align:center}.gt td,.gt th{text-align:center;padding:5px 4px}.gt td:first-child{text-align:left}
+.tscroll{overflow-x:auto}
+.sw{display:inline-flex;align-items:center;gap:8px;margin:0;cursor:pointer;font-size:14.04px;color:var(--mut);position:relative;white-space:nowrap}
+.sw input{position:absolute;opacity:0;width:0;height:0;padding:0;border:0}
+.sw i{width:42px;height:24px;border-radius:12px;background:var(--swoff);position:relative;transition:background .15s}
+.sw i::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:left .15s}
+.sw input:checked+i{background:var(--brand)}.sw input:checked+i::after{left:21px}
+.sw input:focus-visible+i{outline:3px solid #8fb8f5;outline-offset:1px}
+.sw b{min-width:2.4em;color:var(--ink)}
+.chk{display:flex;align-items:center;gap:8px;margin:14px 0 0;cursor:pointer;font-size:15.12px}
+.chk input{width:18px;height:18px;padding:0;margin:0}
+footer{text-align:center;color:var(--foot);font-size:12.96px;padding:10px 0 24px}
+/* 예산 확률 */
+.budrow{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
+.budrow>div:first-child{flex:1;min-width:150px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.pbox{margin-top:14px;padding:14px 16px;background:var(--soft);border:1px solid var(--softline);border-radius:11px}
+.pbig{font-size:clamp(30px,3.6vw,40px);font-weight:800;color:var(--big);line-height:1.2}
+.meter{height:10px;background:var(--row);border-radius:6px;overflow:hidden;margin:10px 0 6px}
+.meter div{height:100%;background:var(--brand);border-radius:6px;transition:width .2s}
+/* 차트 */
+.chartbox svg{width:100%;height:auto;display:block}
+.legend{display:grid;grid-template-columns:1fr 1fr;gap:6px 16px;margin-top:8px;font-size:13px;color:var(--mut)}
+.legend span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chartnote{min-height:4.5em;margin:8px 0 0}#progress{min-height:1.5em;margin:8px 0 0}.legend i{display:inline-block;width:20px;vertical-align:middle;margin-right:5px}
+.legend .ln{height:0;border-top:3px solid}.legend .bx{height:12px;border-radius:2px}
+svg .gl{stroke:var(--grid)}svg .ax{stroke:var(--axis)}svg .tx{fill:var(--mut)}svg .cu{fill:var(--cumc)}svg .hint{fill:var(--axis)}
+@media(max-width:760px){.tab{padding:12px 14px}.chartnote{min-height:9em}.legend{grid-template-columns:1fr}.grid,.lower{grid-template-columns:1fr}.inputs{grid-template-columns:repeat(2,1fr)}.stats{grid-template-columns:1fr}.themebtn span.lbl{display:none}}
+@media(prefers-reduced-motion:no-preference){.progress div{transition:width .15s}}
+</style></head><body>
+<header>
+<div class="hrow"><div><h1>무기·반지·갑옷·스킬 UR 목표 계산기</h1><p>보유 현황과 목표를 입력하면 필요한 추가 뽑기·소환 횟수를 시뮬레이션으로 추정합니다.</p></div>
+<button class="themebtn" id="theme" type="button" aria-label="라이트/다크 모드 전환"><span id="themeIcon">🌙</span><span class="lbl" id="themeLbl">다크 모드</span></button></div>
+<div class="tabs" role="tablist"><button class="tab on" role="tab" data-mode="weapon">⚔️ 무기</button><button class="tab" role="tab" data-mode="ring">💍 반지</button><button class="tab" role="tab" data-mode="armor">🛡️ 갑옷</button><button class="tab" role="tab" data-mode="skill">✨ 스킬</button></div></header>
+<main>
+<div class="grid">
+ <section class="card"><h2>입력</h2><div id="inputs"></div>
+  <div class="buttons"><button class="primary" id="calc">필요 횟수 계산</button><button class="secondary" id="reset">초기화</button></div>
+  <div class="progress"><div id="bar"></div></div><p class="muted" id="progress"></p></section>
+ <section class="card"><h2>계산 결과</h2>
+  <div class="sec"><div class="sec-h"><h3>핵심 결과</h3></div>
+   <div class="result"><div class="muted" id="unit">목표까지 필요한 추가 횟수 (평균)</div><div class="big" id="answer">— 회</div>
+   <div class="stats"><div><span class="muted">중앙값</span><b id="s1">—</b></div><div><span class="muted">90% 확률로 달성</span><b id="s2">—</b></div><div><span class="muted">평균의 95% 신뢰구간</span><b id="s3">—</b></div></div></div>
+   <div class="status" id="status">현재 보유량과 목표를 입력한 뒤 계산하세요.</div></div>
+  <div class="sec"><div class="sec-h"><h3>예산으로 보는 달성 확률</h3></div>
+   <p class="muted sec-d" id="budDesc">투자할 횟수를 입력하면 그 안에 목표를 달성할 확률을 보여줍니다.</p>
+   <div class="budrow"><div><label for="budget" id="budLabel">투자 예산 (횟수)</label><input id="budget" type="number" min="0" inputmode="numeric" placeholder="예: 500"></div>
+   <div class="chips"><button class="chip" type="button" data-q="mean">평균값</button><button class="chip" type="button" data-q="med">중앙값</button><button class="chip" type="button" data-q="p90">90% 값</button></div></div>
+   <div class="pbox" id="budOut"></div></div>
+  <div class="sec"><div class="sec-h"><h3>중간 목표별 필요 횟수</h3></div>
+   <p class="muted sec-d">같은 시뮬레이션에서 각 개수에 처음 도달한 시점을 기록한 값입니다.</p>
+   <div class="tscroll" id="msOut"></div></div>
+  <div class="sec"><div class="sec-h"><h3>필요 횟수 분포</h3></div>
+   <div id="chartBox" class="chartbox"><div id="chart"></div><div class="legend" id="legend"></div><p class="muted chartnote" id="chartNote"></p></div></div>
+  <div class="sec"><div class="sec-h"><h3>목표 달성 시 예상 평균 보유량</h3><label class="sw" for="mergeToggle"><span>합성</span><input type="checkbox" id="mergeToggle" checked><i></i><b id="mergeState">ON</b></label></div>
+   <p class="muted sec-d" id="mergeNote"></p><div id="invOut"></div></div>
+ </section>
+</div>
+<div class="lower"><section class="card" id="info1"></section><section class="card" id="info2"></section></div>
+<footer>시뮬레이션은 브라우저 안에서만 실행되며 입력값은 서버로 전송되지 않고, 이 브라우저(localStorage)에만 탭별로 저장됩니다.</footer>
+</main>
+<script>
+const $=x=>document.getElementById(x), RN=['C','UC','R','SR','SSR','UR'];
+const fmt=(x,d=0)=>x.toLocaleString('ko-KR',{maximumFractionDigits:d});
+const val=el=>Math.max(0,Math.floor(Number(el.value)||0));
+const TRIALS=2000, CAP=1000000, TIME_LIMIT=30000, NOVA_TOTAL=220;
+/* ---------- 입력값 저장 (localStorage) ---------- */
+const SKEY='urcalc-state-v1', MODES=['weapon','ring','armor','skill'];
+const store={mode:'weapon',tabs:{}};
+try{const o=JSON.parse(localStorage.getItem(SKEY));
+  if(o&&typeof o==='object'){if(MODES.includes(o.mode))store.mode=o.mode;if(o.tabs&&typeof o.tabs==='object')store.tabs=o.tabs}}catch(e){}
+const persist=()=>{try{localStorage.setItem(SKEY,JSON.stringify(store))}catch(e){}};
+let mode=store.mode, busy=false;
+const NOUN={weapon:'무기',ring:'반지',skill:'스킬'}, isFlat=()=>mode!=='armor';
+const unitWord=()=>(mode==='weapon'||mode==='ring')?'뽑기':'소환';
+
+/* ---------- 테마 ---------- */
+function applyTheme(t){document.documentElement.setAttribute('data-theme',t);
+  $('themeIcon').textContent=t==='dark'?'☀️':'🌙';$('themeLbl').textContent=t==='dark'?'라이트 모드':'다크 모드';
+  $('theme').setAttribute('aria-pressed',t==='dark')}
+$('theme').onclick=()=>{const t=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';applyTheme(t);try{localStorage.setItem('urcalc-theme',t)}catch(e){}};
+applyTheme(document.documentElement.getAttribute('data-theme'));
+
+/* ---------- 반지 ---------- */
+const RSYN=[[.7,5],[.75,7],[.8,10],[.9,15]];            // [제자리 확률, 확정 보너스 주기]
+const RPULL=[.59,.94,.99];                                // 누적: C 59 / UC 35 / R 5 / SR 1
+function ringMerge(a,n,target){
+  let ch=true;
+  while(ch){ch=false;
+    for(let t=0;t<5;t++){const cost=t===4?2:3;
+      while(a[t]>=cost){a[t]-=cost;n[t]++;ch=true;
+        if(t<4){a[Math.random()<RSYN[t][0]?t:t+1]++;if(n[t]%RSYN[t][1]===0)a[t+1]++}
+        else{a[Math.random()<.5?4:5]++;if(n[4]%2===0)a[5]++}
+        if(a[5]>=target)return true}}}
+  return a[5]>=target}
+const PERIOD=[5,7,10,15,2];                               // 확정 보너스 주기 (C, UC, R, SR, SSR)
+const SPERIOD=[5,7,10,8,5], periods=()=>mode==='skill'?SPERIOD:PERIOD;
+function ringTrial(st,target,pity,ms){
+  const a=st.slice(),n=pity.slice(),raw=st.slice(),rec=new Array(ms.length).fill(Infinity);let k=0,p=0;
+  const chk=()=>{while(k<ms.length&&a[5]>=ms[k])rec[k++]=p};
+  let hit=ringMerge(a,n,target);chk();
+  while(!hit&&p<CAP){const x=Math.random(),g=x<RPULL[0]?0:x<RPULL[1]?1:x<RPULL[2]?2:3;a[g]++;raw[g]++;p++;hit=ringMerge(a,n,target);chk()}
+  return hit?{p,a,raw,ms:rec}:{p:null,ms:rec}}
+
+/* ---------- 스킬 ---------- */
+const SLV={4:[60,23.9,15,1,.1],5:[50,28.3,20,1.5,.2],6:[40,32.7,25,2,.3],7:[35,32.1,30,2.5,.4],8:[30,31.5,35,3,.5],9:[25,30.9,40,3.5,.6],10:[20,30.3,45,4,.7]};
+const SSYN=[[.7,5],[.75,7],[.8,10],[.8,8],[.8,5]];       // [제자리 확률, 확정 보너스 주기] — 모든 등급 3개 합성
+function skillMerge(a,n,target){
+  let ch=true;
+  while(ch){ch=false;
+    for(let t=0;t<5;t++){
+      while(a[t]>=3){a[t]-=3;n[t]++;ch=true;
+        a[Math.random()<SSYN[t][0]?t:t+1]++;if(n[t]%SSYN[t][1]===0)a[t+1]++;
+        if(a[5]>=target)return true}}}
+  return a[5]>=target}
+function skillTrial(st,target,pity,lv,ms){
+  const a=st.slice(),n=pity.slice(),raw=st.slice(),cum=[],rec=new Array(ms.length).fill(Infinity);let s=0,k=0,p=0;SLV[lv].forEach(x=>cum.push(s+=x));
+  const chk=()=>{while(k<ms.length&&a[5]>=ms[k])rec[k++]=p};
+  let hit=skillMerge(a,n,target);chk();
+  while(!hit&&p<CAP){let x=Math.random()*cum[4],r=0;while(x>=cum[r])r++;a[r]++;raw[r]++;p++;hit=skillMerge(a,n,target);chk()}
+  return hit?{p,a,raw,ms:rec}:{p:null,ms:rec}}
+
+/* ---------- 갑옷 ---------- */
+// 인덱스 = 등급*4 + (4-세부등급): 0~3 C, 4~7 UC, 8~11 R, 12~15 SR, 16~19 SSR, 20 = UR 4등급 환산 수량
+const ALV={8:[25,33.75,35,5.5,.7,.05],9:[20,31.9,40,7,1,.1],10:[15,30,45,8.5,1.3,.2]};
+const UV=[1,2,4,8];                                       // UR 4/3/2/1등급의 4등급 환산값
+const COST=[5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,3,3,2,2];
+function cas(a,i,full){for(;i<20;i++){const k=Math.floor(a[i]/COST[i]);if(k){a[i]-=k*COST[i];a[i+1]+=k}else if(!full)break}}
+function armorTrial(st,need,lv,urIn,ms,uv){
+  const a=st.slice(),raw=st.slice(0,20).concat(urIn),rec=new Array(ms.length).fill(Infinity),mn=ms.map(m=>m*uv);cas(a,0,true);
+  const cum=[];let s=0,k=0,p=0;ALV[lv].forEach(x=>cum.push(s+=x));
+  const chk=()=>{while(k<mn.length&&a[20]>=mn[k])rec[k++]=p};
+  const gc=[.5,.8,.95];chk();
+  while(a[20]<need&&p<CAP){
+    let x=Math.random()*cum[5],r=0;while(x>=cum[r])r++;
+    const y=Math.random(),off=y<gc[0]?0:y<gc[1]?1:y<gc[2]?2:3;p++;
+    if(r===5){a[20]+=UV[off];raw[20+off]++}else{const i=r*4+off;a[i]++;raw[i]++;cas(a,i,false)}
+    chk()}
+  if(a[20]<need)return {p:null,ms:rec};
+  let t=a[20];const g1=Math.floor(t/8);t%=8;const g2=Math.floor(t/4);t%=4;const g3=Math.floor(t/2),g4=t%2;   // UR 4등급 환산 수량을 등급별로 분해
+  return {p,a:a.slice(0,20).concat([g4,g3,g2,g1]),raw,ms:rec}}
+
+/* ---------- 시뮬레이션 공통 ---------- */
+function upper(s,x){let lo=0,hi=s.length;while(lo<hi){const m=(lo+hi)>>1;if(s[m]<=x)lo=m+1;else hi=m}return lo}
+async function sim(trial,size,mc){
+  const res=[],inv=new Array(size).fill(0),rawInv=new Array(size).fill(0),msv=Array.from({length:mc},()=>[]);
+  let fails=0,tick=performance.now(),t0=tick,done=TRIALS;
+  for(let i=0;i<TRIALS;i++){
+    const r=trial();r.ms.forEach((v,k)=>msv[k].push(v));
+    if(r.p!==null){res.push(r.p);r.a.forEach((v,k)=>inv[k]+=v);r.raw.forEach((v,k)=>rawInv[k]+=v)}else fails++;
+    if(performance.now()-tick>30){
+      $('bar').style.width=Math.round((i+1)/TRIALS*100)+'%';$('progress').textContent=`시뮬레이션 진행 중: ${i+1} / ${TRIALS}`;
+      await new Promise(r=>setTimeout(r));tick=performance.now();
+      if(tick-t0>TIME_LIMIT){done=i+1;break}}}
+  if(!res.length)return {hits:0,fails,done};
+  const sorted=Float64Array.from(res).sort(),n=res.length,mean=res.reduce((s,v)=>s+v,0)/n;
+  const sd=Math.sqrt(res.reduce((s,v)=>s+(v-mean)**2,0)/Math.max(1,n-1)),se=sd/Math.sqrt(n);
+  const q=f=>sorted[Math.floor(f*(n-1))];
+  const msStats=msv.map(arr=>{const all=Float64Array.from(arr).sort();let fin=all.length,sum=0;while(fin>0&&!isFinite(all[fin-1]))fin--;
+    for(let i=0;i<fin;i++)sum+=all[i];
+    return {all,fin,mean:fin?sum/fin:NaN,med:fin?all[Math.floor(.5*(fin-1))]:NaN,p90:fin?all[Math.floor(.9*(fin-1))]:NaN}});
+  return {hits:n,fails,done,total:done,sorted,mean,sd,med:q(.5),p90:q(.9),lo:Math.max(0,mean-1.96*se),hi:mean+1.96*se,inv:inv.map(v=>v/n),raw:rawInv.map(v=>v/n),msStats}}
+
+/* ---------- 탭별 저장 / 복원 ---------- */
+function saveState(){
+  if(!$('budget'))return;
+  const t=store.tabs[mode]||(store.tabs[mode]={f:{}});t.f=t.f||{};
+  document.querySelectorAll('#inputs input[id],#inputs select[id]').forEach(el=>{
+    if(el.readOnly)return;                       // 스킬 노바 자동 입력된 목표값은 저장하지 않음
+    t.f[el.id]=el.type==='checkbox'?el.checked:el.value});
+  t.budget=$('budget').value;t.merge=$('mergeToggle').checked;store.mode=mode;persist()}
+function restoreState(){
+  const t=store.tabs[mode];
+  if(!t){$('budget').value='';$('mergeToggle').checked=true;return}
+  const f=t.f||{};
+  for(const id in f){const el=$(id);if(!el||!el.closest('#inputs'))continue;
+    if(el.type==='checkbox')el.checked=!!f[id];
+    else if(el.tagName==='SELECT'){if([...el.options].some(o=>o.value===String(f[id])))el.value=f[id]}
+    else el.value=f[id]}
+  $('budget').value=t.budget||'';$('mergeToggle').checked=t.merge!==false;
+  const n=$('nova');if(n&&n.checked)n.dispatchEvent(new Event('change'))}
+document.addEventListener('input',saveState);
+document.addEventListener('change',saveState);
+
+/* ---------- 화면 구성 ---------- */
+const numIn=(id,v=0)=>`<input id="${id}" type="number" min="0" value="${v}" inputmode="numeric">`;
+const sec=(t,body,d='')=>`<div class="sec"><div class="sec-h"><h3>${t}</h3></div>${d?`<p class="muted sec-d">${d}</p>`:''}${body}</div>`;
+function build(){
+  const unit=unitWord();
+  $('unit').textContent=`목표까지 필요한 추가 ${unit} 횟수 (평균)`;$('calc').textContent=`필요 ${unit} 횟수 계산`;
+  $('budLabel').textContent=`투자 예산 (${unit} 횟수)`;
+  $('budDesc').textContent=`투자할 ${unit} 횟수를 입력하면 그 안에 목표를 달성할 확률을 보여줍니다.`;
+  let h='';
+  if(isFlat()){
+    if(mode==='skill')h+=sec('소환 설정',`<label for="lv">스킬 소환 레벨</label><select id="lv">${[4,5,6,7,8,9,10].map(l=>`<option value="${l}"${l===10?' selected':''}>Lv.${l}</option>`).join('')}</select>`);
+    h+=sec(`현재 보유 중인 ${NOUN[mode]} 개수`,`<div class="inputs">${RN.map((s,i)=>`<div><label class="${s}" for="i${i}">${s} 등급</label>${numIn('i'+i)}</div>`).join('')}</div>`,'이미 보유한 UR도 목표 수량에 포함됩니다.');
+    h+=sec('확정 보너스 진행 현황',`<div class="inputs">${['C','UC','R','SR','SSR'].map((s,i)=>`<div><label class="${s}" for="p${i}">${s} 합성 · ${periods()[i]}회 주기</label>${numIn('p'+i)}</div>`).join('')}</div>`,`해당 등급을 지금까지 합성한 누적 횟수를 입력하세요. 주기 ${periods().join('/')}회 중 현재 진행 횟수(예: 5회 주기에서 3회째면 3)를 넣어도 같은 결과입니다.`);
+    h+=sec('목표 설정',`<label for="target">목표 UR 총 보유 개수</label>${numIn('target',10)}${mode==='skill'?`<label class="chk" for="nova"><input type="checkbox" id="nova">스킬 노바 : 초월 해금까지 계산 (UR 스킬 11개 모두 Lv.20)</label><div id="novaBox" hidden style="margin-top:10px"><label for="lvsum">현재 UR 스킬 11개의 레벨 합 (최대 ${NOVA_TOTAL})</label>${numIn('lvsum')}<p class="muted" id="novaNote" style="margin:6px 0 0"></p></div>`:''}`);
+    $('inputs').innerHTML=h;
+    if(mode==='skill'){
+      $('lv').onchange=info;
+      let prevT=10;
+      const nv=()=>{const on=$('nova').checked;$('novaBox').hidden=!on;
+        if(on){let sum=val($('lvsum'));if(sum>NOVA_TOTAL){sum=NOVA_TOTAL;$('lvsum').value=sum}
+          const d=NOVA_TOTAL-sum;if(!$('target').readOnly)prevT=val($('target'));$('target').value=d;$('target').readOnly=true;
+          $('novaNote').textContent=`UR 스킬 11개 × 최대 Lv.20 = ${NOVA_TOTAL}레벨. 남은 레벨 ${NOVA_TOTAL} − ${fmt(sum)} = ${fmt(d)}개를 목표 UR 총 보유 개수로 자동 입력했습니다. 인벤토리에 있는 UR 스킬은 아직 레벨에 쓰지 않은 것으로 보고 목표에 포함해 계산합니다.`}
+        else{$('target').readOnly=false;$('target').value=prevT}};
+      $('nova').onchange=nv;$('lvsum').oninput=nv}
+  }else{
+    h+=sec('소환 설정',`<label for="lv">갑옷 소환 레벨</label><select id="lv"><option value="8">Lv.8</option><option value="9">Lv.9</option><option value="10" selected>Lv.10</option></select>`);
+    h+=sec('현재 보유 중인 갑옷 개수',`<div class="tscroll"><table class="gt"><tr><th></th>${[4,3,2,1].map(g=>`<th>${g}등급</th>`).join('')}</tr>${RN.map((s,r)=>`<tr><td class="${s}">${s}</td>${[4,3,2,1].map(g=>`<td>${numIn('i'+(r*4+4-g))}</td>`).join('')}</tr>`).join('')}</table></div>`);
+    h+=sec('목표 설정',`<div class="row2"><div><label for="tg">목표 UR 등급</label><select id="tg"><option value="3">UR 1등급</option><option value="2">UR 2등급</option><option value="1">UR 3등급</option><option value="0">UR 4등급</option></select></div><div><label for="target">목표 개수</label>${numIn('target',1)}</div></div>`,'낮은 UR 등급은 합성 가능한 범위까지 목표 등급으로 환산해 계산합니다.');
+    $('inputs').innerHTML=h;
+    $('lv').onchange=info}
+  restoreState();info();clearResult()}
+function info(){
+  if(mode==='weapon'||mode==='ring'){
+    $('info1').innerHTML=`<h2>뽑기 확률</h2><table><tr><th>등급</th><th>확률</th></tr><tr><td class="C">C</td><td>59%</td></tr><tr><td class="UC">UC</td><td>35%</td></tr><tr><td class="R">R</td><td>5%</td></tr><tr><td class="SR">SR</td><td>1%</td></tr><tr><td>SSR / UR</td><td>직접 뽑기 없음</td></tr></table>`;
+    $('info2').innerHTML=`<h2>합성 규칙</h2><table><tr><th>합성</th><th>결과</th><th>확정 보너스</th></tr><tr><td>C 3개</td><td>70% C / 30% UC</td><td>5회당 UC +1</td></tr><tr><td>UC 3개</td><td>75% UC / 25% R</td><td>7회당 R +1</td></tr><tr><td>R 3개</td><td>80% R / 20% SR</td><td>10회당 SR +1</td></tr><tr><td>SR 3개</td><td>90% SR / 10% SSR</td><td>15회당 SSR +1</td></tr><tr><td>SSR 2개</td><td>50% SSR / 50% UR</td><td>2회당 UR +1</td></tr></table><div class="warn">확정 보너스는 해당 등급의 누적 합성 횟수가 주기의 배수가 될 때마다 지급됩니다. 입력란에 현재 진행 횟수를 넣으면 그 지점부터 이어서 계산합니다.</div>`;
+  }else if(mode==='skill'){
+    const lv=$('lv').value;
+    $('info1').innerHTML=`<h2>소환 확률</h2><table><tr><th>레벨</th>${RN.slice(0,5).map(s=>`<th class="${s}">${s}</th>`).join('')}</tr>${[4,5,6,7,8,9,10].map(l=>`<tr class="${l==lv?'cur':''}"><td>Lv.${l}</td>${SLV[l].map(x=>`<td>${x}%</td>`).join('')}</tr>`).join('')}</table><p class="muted">UR은 직접 소환되지 않고 합성으로만 얻습니다.</p>`;
+    $('info2').innerHTML=`<h2>합성 규칙</h2><table><tr><th>합성</th><th>결과</th><th>확정 보너스</th></tr><tr><td>C 3개</td><td>70% C / 30% UC</td><td>5회당 UC +1</td></tr><tr><td>UC 3개</td><td>75% UC / 25% R</td><td>7회당 R +1</td></tr><tr><td>R 3개</td><td>80% R / 20% SR</td><td>10회당 SR +1</td></tr><tr><td>SR 3개</td><td>80% SR / 20% SSR</td><td>8회당 SSR +1</td></tr><tr><td>SSR 3개</td><td>80% SSR / 20% UR</td><td>5회당 UR +1</td></tr></table><div class="warn">확정 보너스는 해당 등급의 누적 합성 횟수가 주기의 배수가 될 때마다 지급됩니다. 입력란에 현재 진행 횟수를 넣으면 그 지점부터 이어서 계산합니다.</div>`;
+  }else{
+    const lv=$('lv').value;
+    $('info1').innerHTML=`<h2>소환 확률</h2><table><tr><th>레벨</th>${RN.map(s=>`<th class="${s}">${s}</th>`).join('')}</tr>${[8,9,10].map(l=>`<tr class="${l==lv?'cur':''}"><td>Lv.${l}</td>${ALV[l].map(x=>`<td>${x}%</td>`).join('')}</tr>`).join('')}</table><h3>등급 내 세부 확률</h3><table><tr><th>1등급</th><th>2등급</th><th>3등급</th><th>4등급</th></tr><tr><td>5%</td><td>15%</td><td>30%</td><td>50%</td></tr></table>`;
+    $('info2').innerHTML=`<h2>합성 공식</h2><table><tr><th>합성</th><th>필요 개수</th></tr><tr><td>C·UC·R·SR 4→3→2→1등급</td><td>각 5개 → 1개</td></tr><tr><td>C·UC·R·SR 1등급</td><td>5개 → 다음 등급 4등급 1개</td></tr><tr><td>SSR 4등급 → 3등급</td><td>3개 → 1개</td></tr><tr><td>SSR 3등급 → 2등급</td><td>3개 → 1개</td></tr><tr><td>SSR 2등급 → 1등급</td><td>2개 → 1개</td></tr><tr><td>SSR 1등급 → UR 4등급</td><td>2개 → 1개</td></tr><tr><td>UR 4→3→2→1등급</td><td>각 2개 → 1개</td></tr></table><div class="warn">갑옷 합성은 확률 없이 확정이며, 가능한 합성은 항상 진행한다고 가정합니다.</div>`}}
+function clearResult(){
+  $('answer').textContent='— 회';['s1','s2','s3'].forEach(x=>$(x).textContent='—');
+  $('status').textContent='현재 보유량과 목표를 입력한 뒤 계산하세요.';lastReached=false;resetViz();$('bar').style.width='0';$('progress').textContent=''}
+let last=null,lastReached=false;
+function renderInv(){
+  const on=$('mergeToggle').checked;
+  $('mergeState').textContent=on?'ON':'OFF';
+  $('mergeNote').textContent=on?'가능한 합성을 모두 진행한 최종 보유량입니다.':'합성 없이 뽑기로 얻은 개수에 기존 보유량을 더한 값입니다. (확정 보너스 제외)';
+  $('invOut').innerHTML=invTable(last?(on?last.inv:last.raw):null)}
+function invTable(inv){
+  if(isFlat())return `<table><tr><th>등급</th><th>평균 보유량</th></tr>${RN.map((s,i)=>`<tr><td class="${s}">${s}</td><td>${inv?fmt(inv[i],2):'—'}</td></tr>`).join('')}</table>`;
+  return `<div class="tscroll"><table class="gt"><tr><th></th>${[4,3,2,1].map(g=>`<th>${g}등급</th>`).join('')}</tr>${RN.map((s,r)=>`<tr><td class="${s}">${s}</td>${[4,3,2,1].map(g=>`<td>${inv?fmt(inv[r*4+4-g],2):'—'}</td>`).join('')}</tr>`).join('')}</table></div>`}
+
+/* ---------- 예산 → 달성 확률 / 중간 목표 ---------- */
+const pct=p=>{const v=p*100;return (v>0&&v<.05?'<0.05':v>99.95&&v<100?'>99.95':v.toFixed(1))+'%'};
+function budgetProb(i,N){const m=last.msStats[i];return upper(m.all,N)/last.total}
+function renderBudget(){
+  const box=$('budOut'),raw=$('budget').value.trim(),unit=unitWord();
+  if(lastReached){box.innerHTML=`<div class="pbig">100%</div><div class="meter"><div style="width:100%"></div></div><div class="muted">이미 목표를 달성한 상태입니다.</div>`;return}
+  if(!last){box.innerHTML=`<div class="muted">계산을 실행하면 확률을 확인할 수 있습니다.</div>`;return}
+  if(raw===''){box.innerHTML=`<div class="muted">투자 예산을 입력하거나 위의 평균·중앙값·90% 버튼을 눌러보세요.</div>`;return}
+  const N=val($('budget')),i=last.ms.length-1,p=budgetProb(i,N),cnt=upper(last.msStats[i].all,N);
+  box.innerHTML=`<div class="muted">${fmt(N)}회 ${unit} 안에 목표를 달성할 확률</div><div class="pbig">${pct(p)}</div><div class="meter"><div style="width:${(p*100).toFixed(1)}%"></div></div><div class="muted">시뮬레이션 ${fmt(last.total)}회 중 ${fmt(cnt)}회가 ${fmt(N)}회 이내에 목표를 달성했습니다.</div>`}
+function renderMs(){
+  const el=$('msOut');
+  if(lastReached){el.innerHTML='<p class="muted" style="margin:0">이미 목표를 달성한 상태입니다.</p>';return}
+  if(!last){el.innerHTML='<p class="muted" style="margin:0">계산을 실행하면 표시됩니다.</p>';return}
+  const raw=$('budget').value.trim(),n=last.ms.length,f=v=>isFinite(v)&&!isNaN(v)?fmt(Math.round(v))+'회':'한도 초과';
+  let rows='';
+  for(let i=0;i<n;i++){const m=last.msStats[i];
+    rows+=`<tr class="${i===n-1?'cur':''}"><td>${last.lbl[i]}</td><td>${f(m.mean)}</td><td>${f(m.med)}</td><td>${f(m.p90)}</td><td>${raw===''?'—':pct(budgetProb(i,val($('budget'))))}</td></tr>`}
+  el.innerHTML=`<table><tr><th>목표</th><th>평균</th><th>중앙값</th><th>90% 달성</th><th>예산 내 확률</th></tr>${rows}</table>`}
+function makeMs(T,have){
+  let c=T<=20?[1,3,5,10,15].filter(x=>x<T):[1,...[.1,.25,.5,.75].map(f=>Math.round(T*f))];
+  c.push(T);return [...new Set(c)].filter(x=>x>have&&x>=1).sort((a,b)=>a-b)}
+$('budget').oninput=()=>{renderBudget();renderMs()};
+document.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{if(!last)return;$('budget').value=Math.round(last[b.dataset.q]);saveState();renderBudget();renderMs()});
+
+/* ---------- 분포 차트 ---------- */
+function niceStep(range,n){const raw=range/n,p=Math.pow(10,Math.floor(Math.log10(raw))),f=raw/p;return (f<=1?1:f<=2?2:f<=5?5:10)*p}
+function legend(r){
+  const f=v=>r?fmt(Math.round(v)):'—',lg=(cls,st,t)=>`<span title="${t}"><i class="${cls}" style="${st}"></i>${t}</span>`;
+  return lg('ln','border-color:var(--meanc)',`평균 ${f(r&&r.mean)}회`)+lg('ln','border-color:var(--medc);border-top-style:dashed',`중앙값 ${f(r&&r.med)}회`)+lg('ln','border-color:var(--p90c);border-top-style:dashed',`90% 달성 ${f(r&&r.p90)}회`)+lg('bx','background:var(--ci)',`95% 신뢰구간 ${f(r&&r.lo)} ~ ${f(r&&r.hi)}회`)+lg('ln','border-color:var(--cumc)','누적 확률 (오른쪽 축)')+lg('bx','background:var(--bar)','시행 비율 (왼쪽 축)')}
+function resetViz(){
+  const W=700,H=330,L=50,R=48,T=14,Bm=46,pw=W-L-R,ph=H-T-Bm;let g='';
+  for(let i=0;i<=5;i++){const x=L+pw*i/5;g+=`<line class="gl" x1="${x}" x2="${x}" y1="${T}" y2="${T+ph}"/>`}
+  for(let i=0;i<=4;i++){const y=T+ph*i/4;g+=`<line class="gl" x1="${L}" x2="${L+pw}" y1="${y}" y2="${y}"/>`}
+  $('chart').innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="필요 횟수 분포 차트 (계산 전)">${g}<line class="ax" x1="${L}" x2="${L+pw}" y1="${T+ph}" y2="${T+ph}"/><text class="hint" x="${L+pw/2}" y="${T+ph/2}" text-anchor="middle" font-size="16">계산 결과가 여기에 표시됩니다</text><text class="tx" x="${L+pw/2}" y="${H-6}" text-anchor="middle" font-size="14">필요 횟수 (회)</text></svg>`;
+  $('legend').innerHTML=legend(null);
+  $('chartNote').textContent='계산을 실행하면 평균·중앙값·90% 달성 값과 신뢰구간이 분포 위에 표시됩니다.';
+  last=null;renderInv();renderBudget();renderMs()}
+function drawChart(r){
+  const s=r.sorted,n=s.length,q=f=>s[Math.floor(f*(n-1))];
+  let xmax=Math.max(q(.99),r.p90*1.15,r.mean*1.05);if(!(xmax>0))xmax=1;
+  const xs=niceStep(xmax,6);xmax=Math.ceil(xmax/xs)*xs;
+  const B=40,bw=xmax/B,cnt=new Array(B).fill(0);let over=0;
+  for(let i=0;i<n;i++){const v=s[i];if(v>=xmax)over++;else cnt[Math.floor(v/bw)]++}
+  const pc=cnt.map(c=>c/n*100),ys=niceStep(Math.max(...pc)*1.05,4),ymax=Math.ceil(Math.max(...pc)*1.05/ys)*ys||1;
+  const W=700,H=330,L=50,R=48,T=14,Bm=46,pw=W-L-R,ph=H-T-Bm;
+  const X=v=>L+Math.min(Math.max(v,0),xmax)/xmax*pw,Y=p=>T+ph-p/ymax*ph,YC=c=>T+ph-c*ph;
+  let g='';
+  for(let v=0;v<=xmax+1e-9;v+=xs)g+=`<line class="gl" x1="${X(v)}" x2="${X(v)}" y1="${T}" y2="${T+ph}"/><text class="tx" x="${X(v)}" y="${T+ph+18}" text-anchor="middle" font-size="14">${fmt(v)}</text>`;
+  for(let v=0;v<=ymax+1e-9;v+=ys)g+=`<line class="gl" x1="${L}" x2="${L+pw}" y1="${Y(v)}" y2="${Y(v)}"/><text class="tx" x="${L-6}" y="${Y(v)+5}" text-anchor="end" font-size="14">${+v.toFixed(2)}%</text>`;
+  for(let c=0;c<=1.001;c+=.25)g+=`<text class="cu" x="${L+pw+6}" y="${YC(c)+5}" font-size="14">${Math.round(c*100)}%</text>`;
+  let bars='';
+  pc.forEach((p,i)=>{if(!cnt[i])return;const x0=X(i*bw),w=Math.max(1,pw/B-1);
+    bars+=`<rect x="${x0+.5}" y="${Y(p)}" width="${w}" height="${T+ph-Y(p)}" style="fill:var(--bar)"><title>${fmt(Math.round(i*bw))} ~ ${fmt(Math.round((i+1)*bw))}회: ${fmt(cnt[i])}건 (${p.toFixed(1)}%)</title></rect>`});
+  let cum=0,d=`M${X(0)} ${YC(0)}`;cnt.forEach((c,i)=>{cum+=c;d+=` L${X((i+1)*bw)} ${YC(cum/n)}`});
+  const ciw=Math.max(4,X(r.hi)-X(r.lo)),cix=X(r.mean)-ciw/2;
+  const vl=(v,c,dash,w)=>`<line x1="${X(v)}" x2="${X(v)}" y1="${T}" y2="${T+ph}" style="stroke:var(${c})" stroke-width="${w}" ${dash?'stroke-dasharray="7 4"':''}/>`;
+  $('chart').innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="필요 횟수 분포 히스토그램: 평균, 중앙값, 90% 달성 값, 평균의 95% 신뢰구간 표시">${g}${bars}
+    <path d="${d}" fill="none" style="stroke:var(--cumc)" stroke-width="2.5"/>
+    <rect x="${cix}" y="${T}" width="${ciw}" height="${ph}" style="fill:var(--ci)"/>
+    ${vl(r.med,'--medc',true,2.5)}${vl(r.p90,'--p90c',true,2.5)}${vl(r.mean,'--meanc',false,2.5)}
+    <line class="ax" x1="${L}" x2="${L+pw}" y1="${T+ph}" y2="${T+ph}"/>
+    <text class="tx" x="${L+pw/2}" y="${H-6}" text-anchor="middle" font-size="14">필요 횟수 (회)</text></svg>`;
+  $('legend').innerHTML=legend(r);
+  let note=`90% 달성 값은 평균의 ${(r.p90/r.mean).toFixed(2)}배, 중앙값은 평균의 ${(r.med/r.mean).toFixed(2)}배입니다. 평균의 신뢰구간은 평균 추정치의 오차 범위라 분포 폭보다 훨씬 좁습니다.`;
+  if(over)note+=` 상위 ${(over/n*100).toFixed(1)}%(${fmt(over)}건)는 ${fmt(xmax)}회를 넘어 그래프에서 생략했습니다.`;
+  $('chartNote').textContent=note}
+
+/* ---------- 계산 실행 ---------- */
+async function calc(){
+  if(busy)return;busy=true;lastReached=false;$('calc').disabled=true;const old=$('calc').textContent;$('calc').textContent='계산 중…';
+  const novaOn=mode==='skill'&&$('nova').checked,tv=val($('target'));
+  const target=novaOn?Math.max(0,Math.min(NOVA_TOTAL,NOVA_TOTAL-val($('lvsum')))):Math.max(1,Math.min(100000,tv||1)),unit='회';
+  let trial,size,reached,ms,lbl,have;
+  if(isFlat()){
+    const st=RN.map((_,i)=>val($('i'+i)));size=6;have=st[5];reached=have>=target;const pity=[0,1,2,3,4].map(i=>val($('p'+i)));
+    ms=reached?[]:makeMs(target,have);
+    const lsum=novaOn?val($('lvsum')):0;
+    lbl=ms.map(m=>`UR ${fmt(m)}개`+(novaOn?`<div class="muted" style="font-weight:400">레벨 합 ${fmt(Math.min(NOVA_TOTAL,lsum+m))} / ${NOVA_TOTAL}</div>`:''));
+    const lv=mode==='skill'?$('lv').value:0;
+    trial=mode==='skill'?()=>skillTrial(st,target,pity,lv,ms):()=>ringTrial(st,target,pity,ms)
+  }else{
+    const st=new Array(21).fill(0),urIn=[];for(let i=0;i<24;i++){const v=val($('i'+i));if(i<20)st[i]=v;else{st[20]+=v*UV[i-20];urIn.push(v)}}
+    const tg=+$('tg').value,uv=UV[tg],need=target*uv,lv=$('lv').value;size=24;reached=st[20]>=need;have=Math.floor(st[20]/uv);
+    ms=reached?[]:makeMs(target,have);const gname=[4,3,2,1][tg];
+    lbl=ms.map(m=>`UR ${gname}등급 ${fmt(m)}개`);
+    trial=()=>armorTrial(st,need,lv,urIn,ms,uv)}
+  if(reached){lastReached=true;$('answer').textContent='0 회';['s1','s2','s3'].forEach(x=>$(x).textContent='—');$('status').textContent='이미 목표를 달성했습니다.';resetViz();finish(old);return}
+  const r=await sim(trial,size,ms.length);
+  if(!r.hits){$('answer').textContent='계산 한도 초과';$('status').textContent='시행 상한(100만 회)에서 목표를 달성하지 못했습니다. 목표를 낮춰 다시 시도해 주세요.';resetViz()}
+  else{
+    $('answer').textContent=fmt(Math.round(r.mean))+' '+unit;$('s1').textContent=fmt(Math.round(r.med))+' 회';$('s2').textContent=fmt(Math.round(r.p90))+' 회';
+    $('s3').textContent=`${fmt(Math.round(r.lo))} ~ ${fmt(Math.round(r.hi))} 회`;
+    let msg=`${fmt(r.hits)}회 시행 결과입니다 (표준편차 약 ${fmt(Math.round(r.sd))}회).`;
+    if(r.done<TRIALS)msg+=` 시간 제한으로 ${fmt(r.done)}회만 시행했습니다.`;
+    if(r.fails)msg+=` ${fmt(r.fails)}회는 상한에 도달해 평균에서 제외되어 실제 평균은 더 높을 수 있습니다.`;
+    $('status').textContent=msg;r.ms=ms;r.lbl=lbl;last=r;renderInv();renderBudget();renderMs();drawChart(r)}
+  finish(old)}
+function finish(old){busy=false;$('calc').disabled=false;$('calc').textContent=old;$('progress').textContent='완료';$('bar').style.width='100%'}
+
+/* ---------- 이벤트 ---------- */
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{if(busy)return;mode=b.dataset.mode;store.mode=mode;persist();document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t===b));build()});
+$('calc').onclick=calc;
+$('mergeToggle').onchange=renderInv;
+$('reset').onclick=()=>{if(!busy){delete store.tabs[mode];persist();$('budget').value='';build()}};
+document.addEventListener('focusin',e=>{if(e.target.type==='number')setTimeout(()=>e.target.select())});
+document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.mode===mode));
+build();
+</script></body></html>
